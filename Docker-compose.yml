@@ -1,0 +1,52 @@
+services:
+  mi-mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: djangodb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: 1234
+    volumes:
+      - mi-mysql-data:/var/lib/mysql
+    networks:
+      - mi-red
+    ports:
+      - "3307:3307"
+    restart: always
+
+  mi-django-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.django  # Ajusta el Dockerfile si es necesario
+    environment:
+      - DATABASE_URL=mysql://usuario:clave@mi-mysql:3307/mi_basededatos
+    volumes:
+      - ./static:/app/static
+      - ./media:/app/media
+    depends_on:
+      - mi-mysql
+    networks:
+      - mi-red
+    ports:
+      - "8000:8000"
+    restart: always
+
+  mi-nginx:
+    image: nginx:alpine
+    volumes:
+      - ./default.conf:/etc/nginx/sites-available/default.conf
+      - ./static:/app/static
+    depends_on:
+      - mi-django-app
+    networks:
+      - mi-red
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: always
+
+networks:
+  mi-red:
+
+volumes:
+  mi-mysql-data:
